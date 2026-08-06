@@ -11,23 +11,23 @@ An Ember application created with `ember.nvp`.
 
 ### Installation
 
-~~~sh
+```sh
 pnpm install
-~~~
+```
 
 ### Development
 
 To start the local development server:
 
-~~~sh
+```sh
 pnpm dev
-~~~
+```
 
 or
 
-~~~sh
+```sh
 pnpm start
-~~~
+```
 
 ## Features & Tooling
 
