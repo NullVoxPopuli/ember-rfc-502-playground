@@ -14,28 +14,16 @@ import setupInspector from "@embroider/legacy-inspector-support/ember-source-4.1
 
 import Application from "ember-strict-application-resolver";
 
-import { addCandidates, register } from "#app/di/index.ts";
+import { register } from "#app/di/index.ts";
 import BrowserCookieStore from "#app/domain/cookies/browser-cookie-store.ts";
 import CookieStore from "#app/domain/cookies/cookie-store.ts";
 import MemoryCookieStore from "#app/domain/cookies/memory-cookie-store.ts";
-
-/**
- * RFC 502 -- the candidate pool for shape lookup.
- *
- * This is the same glob that feeds the resolver below. Handing it to the DI layer
- * is what lets `lookup(Transport)` find `app/services/console-transport.ts`
- * without anything importing that file -- see `app/di/shape.ts` and
- * https://github.com/chancancode/ember-polaris-service/issues/19
- */
-const services = import.meta.glob("./services/**/*", { eager: true });
-
-addCandidates(services);
 
 export default class App extends Application {
   modules = {
     ...import.meta.glob("./router.*", { eager: true }),
     ...import.meta.glob("./templates/**/*", { eager: true }),
-    ...services,
+    ...import.meta.glob("./services/**/*", { eager: true }),
   };
   inspector = setupInspector(this);
 }

@@ -32,7 +32,6 @@ module("Application | explicit DI", function (hooks) {
 
     assert.dom("[data-test-count]").hasText("0");
     assert.dom("[data-test-same-instance]").hasText("true");
-    assert.dom("[data-test-transport]").hasText("ConsoleTransport");
     assert.dom("[data-test-summary]").hasText("explicit DI, count 0");
   });
 

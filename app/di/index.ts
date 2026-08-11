@@ -34,22 +34,11 @@ import { getOwner, setOwner } from "@ember/owner";
 import { service as emberService } from "@ember/service";
 
 import { type Instance, isClassKey, type Key } from "./key.ts";
-import { matchByShape } from "./shape.ts";
 
 import type Owner from "@ember/owner";
 import type { Registry as ServiceRegistry } from "@ember/service";
 
 export { type Instance, isClassKey, type Key } from "./key.ts";
-export {
-  addCandidates,
-  type Candidates,
-  clearCandidates,
-  type Match,
-  matchByShape,
-  type Provider,
-  removeCandidates,
-  shapeOf,
-} from "./shape.ts";
 
 /** A key, or a function returning one. The thunk defers evaluating the reference. */
 export type KeyOrThunk<K extends Key> = K | (() => K);
@@ -123,25 +112,14 @@ function instantiate(impl: Key, owner: Owner): object {
  * type."
  */
 export function register<K extends Key>(context: Context, key: K, impl: Key = key): void {
+  const owner = ownerOf(context);
+
   assert(
     `Cannot register ${impl.name} under the key ${key.name}: ${impl.name} is neither ${key.name} ` +
       `nor a subclass of it. Registering an unrelated class would break the class hierarchy that ` +
       `consumers of the key rely on.`,
     impl === key || impl.prototype instanceof key,
   );
-
-  bind(context, key, impl);
-}
-
-/**
- * `register` without the hierarchy check -- the path a shape match takes.
- *
- * The two cannot share one function, and the RFC does not currently acknowledge
- * it: a structural match is by definition *not* a subclass of the key, so it can
- * never satisfy the check above.
- */
-function bind<K extends Key>(context: Context, key: K, impl: Key): void {
-  const owner = ownerOf(context);
 
   assert(
     `${key.name} has already been resolved on this owner, so registering ${impl.name} against it ` +
@@ -194,9 +172,7 @@ export function unregister(context: Context, key: Key): void {
  *
  * 1. an already-resolved instance for this owner
  * 2. an explicit `register(owner, Key, Impl)` binding
- * 3. otherwise a shape match against the resolver's modules, which is what lets
- *    an app *provide* a library's key with no initializer
- * 4. otherwise the key instantiates itself -- "first time lookup without
+ * 3. otherwise the key instantiates itself -- "first time lookup without
  *    registration will register for you"
  */
 export function lookup<K extends Key>(context: Context, key: K): Instance<K> {
@@ -218,7 +194,7 @@ export function lookup<K extends Key>(context: Context, key: K): Instance<K> {
     !isDestroyed(owner),
   );
 
-  const impl = BINDINGS.get(owner)?.get(key) ?? matchByShape(key)?.klass ?? key;
+  const impl = BINDINGS.get(owner)?.get(key) ?? key;
   const instance = instantiate(impl, owner);
 
   // Teardown with the owner, with no base class and no `willDestroy` hook: a

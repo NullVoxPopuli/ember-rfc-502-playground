@@ -1,7 +1,6 @@
 import CounterDemo from "#components/counter-demo.gts";
 import CycleDemo from "#components/cycle-demo.gts";
 import InteropDemo from "#components/interop-demo.gts";
-import ProviderDemo from "#components/provider-demo.gts";
 
 <template>
   <h1>RFC 502 &mdash; Explicit Dependency Injection</h1>
@@ -14,7 +13,6 @@ import ProviderDemo from "#components/provider-demo.gts";
   </p>
 
   <CounterDemo />
-  <ProviderDemo />
   <CycleDemo />
   <InteropDemo />
 
