@@ -1,10 +1,8 @@
 /**
  * RFC 502 -- what counts as a key.
  *
- * Split out from `index.ts` only so that `shape.ts` can use it without importing
- * back into `index.ts`. Which is itself a small demonstration of the RFC's
- * cycle concern: the fix for a module cycle is usually to move the shared thing
- * down a level, and the thunk form exists for when you cannot.
+ * Split out from `index.ts` so that the key type and its runtime test sit together,
+ * with nothing else depending on them.
  */
 import type Owner from "@ember/owner";
 

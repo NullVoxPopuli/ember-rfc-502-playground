@@ -14,10 +14,7 @@ import setupInspector from "@embroider/legacy-inspector-support/ember-source-4.1
 
 import Application from "ember-strict-application-resolver";
 
-import { register } from "#app/di/index.ts";
-import BrowserCookieStore from "#app/domain/cookies/browser-cookie-store.ts";
-import CookieStore from "#app/domain/cookies/cookie-store.ts";
-import MemoryCookieStore from "#app/domain/cookies/memory-cookie-store.ts";
+import { registerCookieStore } from "#app/demos/cookies/cookie-store.ts";
 
 export default class App extends Application {
   modules = {
@@ -29,23 +26,11 @@ export default class App extends Application {
 }
 
 /**
- * RFC 502 -- the instance initializer from the RFC's FastBoot example.
- *
- * Note what this does *not* need: the resolver never sees this code, and the
- * `CookieStore` key never appears in a string. `register` asserts that the
- * implementation really is a `CookieStore`, so a typo here is an error at boot
- * rather than a `TypeError` at the first `.get()`.
+ * The only app-level wiring any demo needs. The choice itself lives with the demo,
+ * in `app/demos/cookies/cookie-store.ts`.
  *
  * Registered imperatively because `ember-strict-application-resolver` has no
  * `knownForType`, so there is no `app/instance-initializers/**` convention to
  * discover. That is incidental to this playground, not to the RFC.
  */
-App.instanceInitializer({
-  name: "register-cookie-store",
-
-  initialize(owner) {
-    const hasDocument = typeof document !== "undefined";
-
-    register(owner, CookieStore, hasDocument ? BrowserCookieStore : MemoryCookieStore);
-  },
-});
+App.instanceInitializer({ name: "cookie-store", initialize: registerCookieStore });

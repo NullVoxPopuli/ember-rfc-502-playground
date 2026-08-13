@@ -6,31 +6,32 @@ to be shipped.
 
 ## The implementation
 
-130 lines in `app/di/`. The owner is the container, so there is no second container
-here — the whole mechanism is a `WeakMap` keyed on the owner, using `getOwner` and
-`setOwner` from `@ember/owner`.
+The owner is the container, so there is no second container here — the whole
+mechanism is a `WeakMap` keyed on the owner, using `getOwner` and `setOwner` from
+`@ember/owner`. 130 lines: `app/di/index.ts` is `lookup` / `register` /
+`unregister` and `service` in all its forms, `app/di/key.ts` is what counts as a key.
 
-| file              | lines | what                                                                 |
-| ----------------- | ----- | -------------------------------------------------------------------- |
-| `app/di/index.ts` | 122   | `lookup` / `register` / `unregister`, and `service` in all its forms |
-| `app/di/key.ts`   | 8     | what counts as a key                                                 |
+Interface / shape matching is out of scope for the RFC, so it isn't implemented here
+either. A library whose dependency the app supplies keeps a string key.
 
-Interface / shape matching is out of scope for the RFC, so it is not implemented
-here either. A library whose dependency the app supplies keeps a string key; see
-`app/services/feature-flags.ts` and `app/domain/dashboard.ts` for the two styles
-side by side.
+## The demos
 
-## What each RFC claim is tested by
+Each demo is one folder holding its services, its component, and its test — which is
+only possible because a class key makes the import the registration. `pnpm test`
+runs 23 tests.
 
-`pnpm test` — 29 tests.
+| folder               | shows                                                       |
+| -------------------- | ----------------------------------------------------------- |
+| `app/demos/counter/` | a service extending nothing; both injection forms; stubbing |
+| `app/demos/cycle/`   | two services injecting each other across a module cycle     |
+| `app/demos/cookies/` | an abstract key with the implementation chosen at boot      |
+| `app/demos/interop/` | a string key and a class key in the same class              |
 
-| claim                                                                   | test                                    |
-| ----------------------------------------------------------------------- | --------------------------------------- |
-| the RFC's own `register`/`lookup` examples run                          | `tests/unit/di/rfc-examples-test.ts`    |
-| lazy self-registration, subclass override, hierarchy check, destruction | `tests/unit/di/registry-test.ts`        |
-| mutually-dependent services across a module cycle                       | `tests/unit/di/cycle-test.ts`           |
-| all four injection forms resolve to one instance; stubbing              | `tests/rendering/counter-demo-test.gts` |
-| the whole thing boots; instance-initializer selection; interop          | `tests/application/di-test.ts`          |
+Two things deliberately sit outside that structure:
+
+- `app/di/di-test.ts` — the registry semantics, next to the implementation
+- `app/services/feature-flags.ts` — a string-keyed service, which _has_ to live in
+  `app/services/` for the resolver to find it. That contrast is the point.
 
 ## Where the findings went
 
@@ -46,10 +47,9 @@ records each one. The short list:
 - the thunk form is needed on **both** sides of a cycle
 - a class-keyed registry does not need a new map on `Registry` at all
 
-## Demos in the browser
+## In the browser
 
-`pnpm start`, then open the app — `app/templates/application.gts` renders one
-section per claim.
+`pnpm start`, then open the app — `app/templates/application.gts` renders every demo.
 
 ## Getting Started
 

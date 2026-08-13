@@ -12,7 +12,7 @@
  *
  * ```ts
  * import { service } from '#app/di/index.ts';
- * import Notifications from '#app/domain/notifications.ts';
+ * import Notifications from './notifications.ts';
  *
  * class Demo {
  *   @service(Notifications) notifications;      // lazy

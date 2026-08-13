@@ -1,14 +1,16 @@
 /**
- * RFC 502 -- the registry semantics the RFC promises, one test per claim.
+ * The registry semantics the RFC promises, one test per claim. Quoted lines are
+ * from the RFC text.
  */
 import { destroy } from "@ember/destroyable";
 import { settled } from "@ember/test-helpers";
 import { module, test } from "qunit";
 import { setupTest } from "ember-qunit";
 
-import { hasBinding, isResolved, lookup, register, unregister } from "#app/di/index.ts";
-import Counter from "#app/domain/counter.ts";
-import Logger from "#app/domain/logger.ts";
+import Counter from "#app/demos/counter/counter.ts";
+import FeatureFlags from "#app/services/feature-flags.ts";
+
+import { hasBinding, isResolved, lookup, register, unregister } from "./index.ts";
 
 class SubCounter extends Counter {
   override increment = () => {
@@ -18,31 +20,25 @@ class SubCounter extends Counter {
 
 class Unrelated {}
 
-module("Unit | di | registry", function (hooks) {
+module("Unit | di", function (hooks) {
   setupTest(hooks);
 
-  /**
-   * "no registration needed, because MyClass could be in a dynamic bundle"
-   */
+  /** "no registration needed, because MyClass could be in a dynamic bundle" */
   test("an unregistered key resolves itself on first use", function (assert) {
     assert.false(hasBinding(this.owner, Counter), "no binding up front");
-    assert.false(isResolved(this.owner, Counter), "and nothing instantiated");
+    assert.false(isResolved(this.owner, Counter), "nothing instantiated");
 
-    const counter = lookup(this.owner, Counter);
-
-    assert.true(counter instanceof Counter);
-    assert.true(isResolved(this.owner, Counter), "now it is resolved");
+    assert.true(lookup(this.owner, Counter) instanceof Counter);
+    assert.true(isResolved(this.owner, Counter), "now resolved");
     assert.false(hasBinding(this.owner, Counter), "still with no explicit binding");
   });
 
-  test("the same key resolves to the same instance on one owner", function (assert) {
+  test("one instance per owner", function (assert) {
     assert.strictEqual(lookup(this.owner, Counter), lookup(this.owner, Counter));
   });
 
-  /**
-   * "both stubbing (in a test), or clobbering, would look the same"
-   */
-  test("registering a subclass under the key replaces the implementation", function (assert) {
+  /** "both stubbing (in a test), or clobbering, would look the same" */
+  test("registering a subclass replaces the implementation", function (assert) {
     register(this.owner, Counter, SubCounter);
 
     const counter = lookup(this.owner, Counter);
@@ -52,7 +48,7 @@ module("Unit | di | registry", function (hooks) {
 
     counter.increment();
 
-    assert.strictEqual(counter.count, 2, "the override behaviour is what runs");
+    assert.strictEqual(counter.count, 2, "the override runs");
   });
 
   /**
@@ -66,12 +62,8 @@ module("Unit | di | registry", function (hooks) {
     );
   });
 
-  /**
-   * Not in the RFC, and worth adding: today, re-registering a string-keyed
-   * service after it has been resolved silently does nothing. The most common
-   * way to get bitten is stubbing after `render`.
-   */
-  test("registering after the key has been resolved is an error, not a silent no-op", function (assert) {
+  /** Today the equivalent silently does nothing. */
+  test("registering after resolution is an error, not a silent no-op", function (assert) {
     lookup(this.owner, Counter);
 
     assert.throws(
@@ -89,27 +81,19 @@ module("Unit | di | registry", function (hooks) {
 
     assert.false(hasBinding(this.owner, Counter));
     assert.false(isResolved(this.owner, Counter));
-    assert.notStrictEqual(lookup(this.owner, Counter), first, "a fresh instance after unregister");
+    assert.notStrictEqual(lookup(this.owner, Counter), first, "a fresh instance");
   });
 
-  /**
-   * A service does not have to extend anything -- but it may.
-   */
-  test("an EmberObject-based key is registered directly, a plain class is wrapped", function (assert) {
-    const logger = lookup(this.owner, Logger);
+  /** A service does not have to extend anything -- but it may. */
+  test("an EmberObject-based key goes through create, a plain class through new", function (assert) {
+    const flags = lookup(this.owner, FeatureFlags);
 
-    assert.true(logger instanceof Logger, "Service subclass resolves");
-
-    logger.log("hello");
-
-    assert.deepEqual(logger.lines, ["hello"]);
+    assert.true(flags instanceof FeatureFlags, "Service subclass resolves");
+    assert.true(flags.isEnabled("explicit-di"), "and was initialized");
     assert.true(lookup(this.owner, Counter) instanceof Counter, "plain class resolves");
   });
 
-  /**
-   * `lookup` calls `associateDestroyableChild(owner, instance)`, so
-   * `registerDestructor` works with no base class and no `willDestroy` hook.
-   */
+  /** `lookup` associates the instance with the owner, so no base class is needed. */
   test("a plain-class service is destroyed with its owner", async function (assert) {
     const counter = lookup(this.owner, Counter);
 
